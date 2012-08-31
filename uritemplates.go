@@ -2,7 +2,6 @@ package uritemplates
 
 import (
 	"errors"
-	"net/url"
 	"strings"
 )
 
@@ -53,7 +52,7 @@ func Parse(rawtemplate string) (template *UriTemplate, err error) {
 	return template, nil
 }
 
-func (self *UriTemplate) ExpandString(values map[string]string) (string, error) {
+func (self *UriTemplate) ExpandString(values map[string]interface{}) string {
 	raw := ""
 	for _, p := range self.parts {
 		if len(p.raw) > 0 {
@@ -61,18 +60,16 @@ func (self *UriTemplate) ExpandString(values map[string]string) (string, error) 
 		} else if p.kind == LEVEL1 {
 			for _, term := range p.terms {
 				if value, ok := values[term]; ok {
-					raw = raw + value
+					switch value.(type) {
+					case string:
+						raw = raw + value.(string)
+					case []interface{}:
+					case map[string]interface{}:
+					default:
+					}
 				}
 			}
 		}
 	}
-	return raw, nil
-}
-
-func (self *UriTemplate) ExpandURL(values map[string]string) (expanded *url.URL, err error) {
-	var s string
-	if s, err = self.ExpandString(values); err != nil {
-		return expanded, err
-	}
-	return url.Parse(s)
+	return raw
 }
