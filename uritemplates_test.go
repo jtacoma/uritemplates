@@ -13,12 +13,12 @@ type spec struct {
 }
 type specTest struct {
 	template string
-	expected string
+	expected []string
 }
 
 func loadSpec(t *testing.T, path string) []spec {
 
-	file, err := os.Open("tests/spec-examples-by-section.json")
+	file, err := os.Open(path)
 	if err != nil {
 		t.Errorf("Failed to load test specification: %s", err)
 	}
@@ -51,9 +51,14 @@ func loadSpec(t *testing.T, path string) []spec {
 			results[i].tests[k].template = test[0].(string)
 			switch typ := test[1].(type) {
 			case string:
-				results[i].tests[k].expected = test[1].(string)
+				results[i].tests[k].expected = make([]string, 1)
+				results[i].tests[k].expected[0] = test[1].(string)
 			case []interface{}:
-				results[i].tests[k].expected = test[1].([]interface{})[0].(string)
+				arr := test[1].([]interface{})
+				results[i].tests[k].expected = make([]string, len(arr))
+				for m, s := range arr {
+					results[i].tests[k].expected[m] = s.(string)
+				}
 			default:
 				t.Errorf("Unrecognized value type %v", typ)
 			}
@@ -71,8 +76,14 @@ func TestStandards(t *testing.T) {
 				t.Errorf("%s: %s %v", group.title, err, test.template)
 			}
 			result := template.ExpandString(group.values)
-			if result != test.expected {
-				t.Errorf("%s: expected %v, but got %v", group.title, test.expected, result)
+			pass := false
+			for _, expected := range test.expected {
+				if result == expected {
+					pass = true
+				}
+			}
+			if !pass {
+				t.Errorf("%s: expected %v, but got %v", group.title, test.expected[0], result)
 			}
 		}
 	}
