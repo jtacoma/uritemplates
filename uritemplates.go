@@ -3,10 +3,8 @@ package uritemplates
 import (
 	"errors"
 	"fmt"
-	//"html"
-	//"html/template"
-	//"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -42,8 +40,8 @@ type UriTemplate struct {
 func Parse(rawtemplate string) (template *UriTemplate, err error) {
 	template = new(UriTemplate)
 	template.raw = rawtemplate
-	template.parts = make([]templatePart, 32) // TODO: smart allocation
 	split := strings.Split(rawtemplate, "{")
+	template.parts = make([]templatePart, len(split)*2-1)
 	for i, s := range split {
 		if i == 0 {
 			template.parts[i].raw = s
@@ -84,8 +82,9 @@ type templatePart struct {
 }
 
 type templateTerm struct {
-	name    string
-	explode bool
+	name     string
+	explode  bool
+	truncate int
 }
 
 func parseExpression(expression string) (result templatePart) {
@@ -149,7 +148,8 @@ func parseTerm(term string) (result templateTerm) {
 		result.name = term
 	} else if len(split) == 2 {
 		result.name = split[0]
-		// TODO: prefix modifier is in split[1]
+		parsed, _ := strconv.ParseInt(split[1], 10, 0)
+		result.truncate = int(parsed)
 	}
 	// else error ?
 	return result
@@ -211,6 +211,9 @@ func (self *templatePart) expandName(name string, empty bool) (result string) {
 }
 
 func (self *templatePart) expandString(t templateTerm, s string) (result string) {
+	if len(s) > t.truncate && t.truncate > 0 {
+		s = s[:t.truncate]
+	}
 	return self.expandName(t.name, len(s) == 0) +
 		escape(s, self.allowReserved)
 }
@@ -228,6 +231,9 @@ func (self *templatePart) expandArray(t templateTerm, a []interface{}) (result s
 		switch v.(type) {
 		case string:
 			s := v.(string)
+			if len(s) > t.truncate && t.truncate > 0 {
+				s = s[:t.truncate]
+			}
 			if self.named && t.explode {
 				result += self.expandName(t.name, len(s) == 0)
 			}
@@ -246,12 +252,16 @@ func (self *templatePart) expandMap(t templateTerm, m map[string]interface{}) (r
 		}
 		switch v.(type) {
 		case string:
+			s := v.(string)
+			if len(s) > t.truncate && t.truncate > 0 {
+				s = s[:t.truncate]
+			}
 			if t.explode {
 				result += escape(k, self.allowReserved) +
-					"=" + escape(v.(string), self.allowReserved)
+					"=" + escape(s, self.allowReserved)
 			} else {
 				result += escape(k, self.allowReserved) +
-					"," + escape(v.(string), self.allowReserved)
+					"," + escape(s, self.allowReserved)
 			}
 		default:
 		}
