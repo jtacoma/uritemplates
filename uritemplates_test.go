@@ -67,8 +67,8 @@ func loadSpec(t *testing.T, path string) []spec {
 	return results
 }
 
-func TestStandards(t *testing.T) {
-	var spec = loadSpec(t, "tests/spec-examples-by-section.json")
+func runSpec(t *testing.T, path string) {
+	var spec = loadSpec(t, path)
 	for _, group := range spec {
 		for _, test := range group.tests {
 			template, err := Parse(test.template)
@@ -87,4 +87,12 @@ func TestStandards(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestExtended(t *testing.T) {
+	runSpec(t, "tests/extended-tests.json")
+}
+
+func TestSpecExamples(t *testing.T) {
+	runSpec(t, "tests/spec-examples.json")
 }
