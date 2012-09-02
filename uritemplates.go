@@ -10,6 +10,7 @@ import (
 
 var unreserved = regexp.MustCompile("[^A-Za-z0-9\\-._~]")
 var reserved = regexp.MustCompile("[^A-Za-z0-9\\-._~:/?#[\\]@!$&'()*+,;=]")
+var validname = regexp.MustCompile("^([A-Za-z0-9_\\.]|%[0-9A-Fa-f][0-9A-Fa-f])+$")
 
 func pctEncode(original string) (result string) {
 	for _, b := range []byte(original) {
@@ -44,18 +45,29 @@ func Parse(rawtemplate string) (template *UriTemplate, err error) {
 	template.parts = make([]templatePart, len(split)*2-1)
 	for i, s := range split {
 		if i == 0 {
+			if strings.Contains(s, "}") {
+				err = errors.New("unexpected }")
+				break
+			}
 			template.parts[i].raw = s
 		} else {
 			subsplit := strings.Split(s, "}")
 			if len(subsplit) != 2 {
-				return nil, errors.New("malformed template")
+				err = errors.New("malformed template")
+				break
 			}
 			expression := subsplit[0]
-			template.parts[i*2-1] = parseExpression(expression)
+			template.parts[i*2-1], err = parseExpression(expression)
+			if err != nil { break }
+			if strings.Contains(subsplit[1], "}") {
+				err = errors.New("unexpected }")
+				break
+			}
 			template.parts[i*2].raw = subsplit[1]
 		}
 	}
-	return template, nil
+	if err != nil { template = nil }
+	return template, err
 }
 
 const (
@@ -87,7 +99,7 @@ type templateTerm struct {
 	truncate int
 }
 
-func parseExpression(expression string) (result templatePart) {
+func parseExpression(expression string) (result templatePart, err error) {
 	switch {
 	case strings.HasPrefix(expression, "+"):
 		result.kind = PLUS
@@ -133,12 +145,13 @@ func parseExpression(expression string) (result templatePart) {
 	rawterms := strings.Split(expression, ",")
 	result.terms = make([]templateTerm, len(rawterms))
 	for i, raw := range rawterms {
-		result.terms[i] = parseTerm(raw)
+		result.terms[i], err = parseTerm(raw)
+		if err != nil { break }
 	}
-	return result
+	return result, err
 }
 
-func parseTerm(term string) (result templateTerm) {
+func parseTerm(term string) (result templateTerm, err error) {
 	if strings.HasSuffix(term, "*") {
 		result.explode = true
 		term = term[:len(term)-1]
@@ -148,11 +161,19 @@ func parseTerm(term string) (result templateTerm) {
 		result.name = term
 	} else if len(split) == 2 {
 		result.name = split[0]
-		parsed, _ := strconv.ParseInt(split[1], 10, 0)
+		var parsed int64
+		parsed, err = strconv.ParseInt(split[1], 10, 0)
 		result.truncate = int(parsed)
+	} else {
+		err = errors.New("multiple colons in same term")
 	}
-	// else error ?
-	return result
+	if !validname.MatchString(result.name) {
+		err = errors.New("not a valid name: " + result.name)
+	}
+	if result.explode && result.truncate > 0 {
+		err = errors.New("both explode and prefix modifers on same term")
+	}
+	return result, err
 }
 
 func (self *UriTemplate) ExpandString(values map[string]interface{}) string {
