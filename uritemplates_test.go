@@ -59,6 +59,8 @@ func loadSpec(t *testing.T, path string) []spec {
 				for m, s := range arr {
 					results[i].tests[k].expected[m] = s.(string)
 				}
+			case bool:
+				results[i].tests[k].expected = make([]string, 0)
 			default:
 				t.Errorf("Unrecognized value type %v", typ)
 			}
@@ -73,7 +75,15 @@ func runSpec(t *testing.T, path string) {
 		for _, test := range group.tests {
 			template, err := Parse(test.template)
 			if err != nil {
-				t.Errorf("%s: %s %v", group.title, err, test.template)
+				if len(test.expected) > 0 {
+					t.Errorf("%s: %s %v", group.title, err, test.template)
+				}
+				continue
+			} else if len(test.expected) == 0 {
+				t.Errorf("%s: should have failed while parsing %v", group.title, test.template)
+				continue
+			} else if template == nil {
+				t.Errorf("%s: both err and parsed template are nil: %v", group.title, test.template)
 			}
 			result := template.ExpandString(group.values)
 			pass := false
@@ -91,6 +101,10 @@ func runSpec(t *testing.T, path string) {
 
 func TestExtended(t *testing.T) {
 	runSpec(t, "tests/extended-tests.json")
+}
+
+func TestNegative(t *testing.T) {
+	runSpec(t, "tests/negative-tests.json")
 }
 
 func TestSpecExamples(t *testing.T) {
