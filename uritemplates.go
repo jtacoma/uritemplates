@@ -201,7 +201,7 @@ func (self *templatePart) expand(values map[string]interface{}) string {
 
 func (self *templatePart) expandName(name string, empty bool) (result string) {
 	if self.named {
-		result = escape(name, self.allowReserved)
+		result = name
 		if empty {
 			result += self.ifemp
 		} else {
