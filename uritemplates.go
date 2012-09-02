@@ -185,7 +185,8 @@ func (self *templatePart) expand(values map[string]interface{}) string {
 			v := value.(map[string]interface{})
 			next = self.expandMap(term, v)
 		default:
-			continue
+			v := fmt.Sprintf("%v", value)
+			next = self.expandString(term, v)
 		}
 		if result != self.first {
 			result += self.sep
@@ -228,17 +229,20 @@ func (self *templatePart) expandArray(t templateTerm, a []interface{}) (result s
 		} else if i > 0 {
 			result += ","
 		}
+		var s string
 		switch v.(type) {
 		case string:
-			s := v.(string)
-			if len(s) > t.truncate && t.truncate > 0 {
-				s = s[:t.truncate]
-			}
-			if self.named && t.explode {
-				result += self.expandName(t.name, len(s) == 0)
-			}
-			result += escape(s, self.allowReserved)
+			s = v.(string)
+		default:
+			s = fmt.Sprintf("%v", v)
 		}
+		if len(s) > t.truncate && t.truncate > 0 {
+			s = s[:t.truncate]
+		}
+		if self.named && t.explode {
+			result += self.expandName(t.name, len(s) == 0)
+		}
+		result += escape(s, self.allowReserved)
 	}
 	return result
 }
@@ -250,20 +254,22 @@ func (self *templatePart) expandMap(t templateTerm, m map[string]interface{}) (r
 		} else if len(result) > 0 {
 			result += ","
 		}
+		var s string
 		switch v.(type) {
 		case string:
-			s := v.(string)
-			if len(s) > t.truncate && t.truncate > 0 {
-				s = s[:t.truncate]
-			}
-			if t.explode {
-				result += escape(k, self.allowReserved) +
-					"=" + escape(s, self.allowReserved)
-			} else {
-				result += escape(k, self.allowReserved) +
-					"," + escape(s, self.allowReserved)
-			}
+			s = v.(string)
 		default:
+			s = fmt.Sprintf("%v", v)
+		}
+		if len(s) > t.truncate && t.truncate > 0 {
+			s = s[:t.truncate]
+		}
+		if t.explode {
+			result += escape(k, self.allowReserved) +
+				"=" + escape(s, self.allowReserved)
+		} else {
+			result += escape(k, self.allowReserved) +
+				"," + escape(s, self.allowReserved)
 		}
 	}
 	if !t.explode {
