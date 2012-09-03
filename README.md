@@ -1,7 +1,7 @@
 uritemplates
 ============
 
-Package *uritemplates* is a level 4 implementation of [RFC 6570 (URI Template)](http://tools.ietf.org/html/rfc6570) in Go.
+Package **uritemplates** is a level 4 implementation of [RFC 6570 (URI Template)](http://tools.ietf.org/html/rfc6570) in Go.
 
 Installation
 ------------
@@ -17,7 +17,8 @@ Code:
     values := make(map[string]interface{})
     values["user"] = "jtacoma"
     values["repo"] = "uritemplates"
-    fmt.Printf(template.ExpandString(values))
+    expanded, _ := template.ExpandString(values)
+    fmt.Printf(expanded)
 
 Output:
 

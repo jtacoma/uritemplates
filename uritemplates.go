@@ -1,4 +1,14 @@
 // Package uritemplates is a level 4 implementation of RFC 6570 (URI Template).
+//
+// To use uritemplates, parse a template string and expand it with a value map:
+//
+//	template, _ := uritemplates.Parse("https://api.github.com/repos{/user,repo}")
+//	values := make(map[string]interface{})
+//	values["user"] = "jtacoma"
+//	values["repo"] = "uritemplates"
+//	expanded, _ := template.ExpandString(values)
+//	fmt.Printf(expanded)
+//
 package uritemplates
 
 import (
@@ -83,21 +93,8 @@ func Parse(rawtemplate string) (template *UriTemplate, err error) {
 	return template, err
 }
 
-const (
-	_          = iota
-	SIMPLE     = iota
-	PLUS       = iota
-	SLASH      = iota
-	DOT        = iota
-	SEMICOLON  = iota
-	QUERY      = iota
-	AMPERSAND  = iota
-	CROSSHATCH = iota
-)
-
 type templatePart struct {
 	raw           string
-	kind          int
 	terms         []templateTerm
 	first         string
 	sep           string
@@ -115,45 +112,41 @@ type templateTerm struct {
 func parseExpression(expression string) (result templatePart, err error) {
 	switch {
 	case strings.HasPrefix(expression, "+"):
-		result.kind = PLUS
 		result.sep = ","
 		result.allowReserved = true
+		expression = expression[1:]
 	case strings.HasPrefix(expression, "."):
-		result.kind = DOT
 		result.first = "."
 		result.sep = "."
+		expression = expression[1:]
 	case strings.HasPrefix(expression, "/"):
-		result.kind = SLASH
 		result.first = "/"
 		result.sep = "/"
+		expression = expression[1:]
 	case strings.HasPrefix(expression, ";"):
-		result.kind = SEMICOLON
 		result.first = ";"
 		result.sep = ";"
 		result.named = true
+		expression = expression[1:]
 	case strings.HasPrefix(expression, "?"):
-		result.kind = QUERY
 		result.first = "?"
 		result.sep = "&"
 		result.named = true
 		result.ifemp = "="
+		expression = expression[1:]
 	case strings.HasPrefix(expression, "&"):
-		result.kind = AMPERSAND
 		result.first = "&"
 		result.sep = "&"
 		result.named = true
 		result.ifemp = "="
+		expression = expression[1:]
 	case strings.HasPrefix(expression, "#"):
-		result.kind = CROSSHATCH
 		result.first = "#"
 		result.sep = ","
 		result.allowReserved = true
-	default:
-		result.kind = SIMPLE
-		result.sep = ","
-	}
-	if result.kind != SIMPLE {
 		expression = expression[1:]
+	default:
+		result.sep = ","
 	}
 	rawterms := strings.Split(expression, ",")
 	result.terms = make([]templateTerm, len(rawterms))
