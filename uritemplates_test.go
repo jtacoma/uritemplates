@@ -80,7 +80,7 @@ func runSpec(t *testing.T, path string) {
 				}
 				continue
 			}
-			result, err := template.ExpandString(group.values)
+			result, err := template.Expand(group.values)
 			if err != nil {
 				if len(test.expected) > 0 {
 					t.Errorf("%s: %s %v", group.title, err, test.template)

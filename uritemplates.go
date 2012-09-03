@@ -1,3 +1,4 @@
+// Package uritemplates is a level 4 implementation of RFC 6570 (URI Template).
 package uritemplates
 
 import (
@@ -33,11 +34,13 @@ func escape(s string, allowReserved bool) string {
 	return result
 }
 
+// A UriTemplate is a parsed representation of a URI template.
 type UriTemplate struct {
 	raw   string
 	parts []templatePart
 }
 
+// Parse parses a URI template string into a UriTemplate object.
 func Parse(rawtemplate string) (template *UriTemplate, err error) {
 	template = new(UriTemplate)
 	template.raw = rawtemplate
@@ -64,7 +67,9 @@ func Parse(rawtemplate string) (template *UriTemplate, err error) {
 			}
 			expression := subsplit[0]
 			template.parts[i*2-1], err = parseExpression(expression)
-			if err != nil { break }
+			if err != nil {
+				break
+			}
 			if strings.Contains(subsplit[1], "}") {
 				err = errors.New("unexpected }")
 				break
@@ -72,7 +77,9 @@ func Parse(rawtemplate string) (template *UriTemplate, err error) {
 			template.parts[i*2].raw = subsplit[1]
 		}
 	}
-	if err != nil { template = nil }
+	if err != nil {
+		template = nil
+	}
 	return template, err
 }
 
@@ -152,7 +159,9 @@ func parseExpression(expression string) (result templatePart, err error) {
 	result.terms = make([]templateTerm, len(rawterms))
 	for i, raw := range rawterms {
 		result.terms[i], err = parseTerm(raw)
-		if err != nil { break }
+		if err != nil {
+			break
+		}
 	}
 	return result, err
 }
@@ -182,11 +191,14 @@ func parseTerm(term string) (result templateTerm, err error) {
 	return result, err
 }
 
-func (self *UriTemplate) ExpandString(values map[string]interface{}) (result string, err error) {
+// Expand expands a URI template with a set of values to produce a string.
+func (self *UriTemplate) Expand(values map[string]interface{}) (result string, err error) {
 	var next string
 	for _, p := range self.parts {
 		next, err = p.expand(values)
-		if err != nil { break }
+		if err != nil {
+			break
+		}
 		result += next
 	}
 	return result, err
