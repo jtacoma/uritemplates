@@ -1,6 +1,26 @@
-// Package uritemplates is a level 4 implementation of RFC 6570 (URI Template).
+// Copyright 2012 Joshua Tacoma
 //
-// To use uritemplates, parse a template string and expand it with a value map:
+// This file is part of package Uritemplates.
+//
+// Uritemplates is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// Uritempaltes is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public
+// License along with Uritemplates.  If not, see
+// <http://www.gnu.org/licenses/>.
+
+// Package uritemplates is a level 4 implementation of RFC 6570 (URI
+// Template).
+//
+// To use uritemplates, parse a template string and expand it with a value
+// map:
 //
 //	template, _ := uritemplates.Parse("https://api.github.com/repos{/user,repo}")
 //	values := make(map[string]interface{})
