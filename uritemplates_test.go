@@ -79,13 +79,17 @@ func runSpec(t *testing.T, path string) {
 					t.Errorf("%s: %s %v", group.title, err, test.template)
 				}
 				continue
-			} else if len(test.expected) == 0 {
-				t.Errorf("%s: should have failed while parsing %v", group.title, test.template)
-				continue
-			} else if template == nil {
-				t.Errorf("%s: both err and parsed template are nil: %v", group.title, test.template)
 			}
-			result := template.ExpandString(group.values)
+			result, err := template.ExpandString(group.values)
+			if err != nil {
+				if len(test.expected) > 0 {
+					t.Errorf("%s: %s %v", group.title, err, test.template)
+				}
+				continue
+			} else if len(test.expected) == 0 {
+				t.Errorf("%s: should have failed while parsing or expanding %v but got %v", group.title, test.template, result)
+				continue
+			}
 			pass := false
 			for _, expected := range test.expected {
 				if result == expected {

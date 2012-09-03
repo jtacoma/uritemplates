@@ -48,6 +48,12 @@ func Parse(rawtemplate string) (template *UriTemplate, err error) {
 			if strings.Contains(s, "}") {
 				err = errors.New("unexpected }")
 				break
+			} else {
+				subsplit := strings.Split(s, ":")
+				if len(subsplit) > 1 && strings.Contains(subsplit[0], "/") {
+					err = errors.New("unexpected :")
+					break
+				}
 			}
 			template.parts[i].raw = s
 		} else {
@@ -176,19 +182,21 @@ func parseTerm(term string) (result templateTerm, err error) {
 	return result, err
 }
 
-func (self *UriTemplate) ExpandString(values map[string]interface{}) string {
-	raw := ""
+func (self *UriTemplate) ExpandString(values map[string]interface{}) (result string, err error) {
+	var next string
 	for _, p := range self.parts {
-		raw = raw + p.expand(values)
+		next, err = p.expand(values)
+		if err != nil { break }
+		result += next
 	}
-	return raw
+	return result, err
 }
 
-func (self *templatePart) expand(values map[string]interface{}) string {
+func (self *templatePart) expand(values map[string]interface{}) (result string, err error) {
 	if len(self.raw) > 0 {
-		return self.raw
+		return self.raw, err
 	}
-	result := self.first
+	result = self.first
 	for _, term := range self.terms {
 		value, exists := values[term.name]
 		if !exists {
@@ -203,6 +211,10 @@ func (self *templatePart) expand(values map[string]interface{}) string {
 			v := value.([]interface{})
 			next = self.expandArray(term, v)
 		case map[string]interface{}:
+			if term.truncate > 0 {
+				err = errors.New("cannot truncate a map expansion")
+				break
+			}
 			v := value.(map[string]interface{})
 			next = self.expandMap(term, v)
 		default:
@@ -217,7 +229,7 @@ func (self *templatePart) expand(values map[string]interface{}) string {
 	if result == self.first {
 		result = ""
 	}
-	return result
+	return result, err
 }
 
 func (self *templatePart) expandName(name string, empty bool) (result string) {
