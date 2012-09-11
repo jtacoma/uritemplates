@@ -43,15 +43,18 @@ var unreserved = regexp.MustCompile("[^A-Za-z0-9\\-._~]")
 var reserved = regexp.MustCompile("[^A-Za-z0-9\\-._~:/?#[\\]@!$&'()*+,;=]")
 var validname = regexp.MustCompile("^([A-Za-z0-9_\\.]|%[0-9A-Fa-f][0-9A-Fa-f])+$")
 
-func pctEncode(original string) (result string) {
-	for _, b := range []byte(original) {
-		if b < 16 {
-			result += fmt.Sprintf("%%0%X", b)
-		} else {
-			result += fmt.Sprintf("%%%X", b)
-		}
+var hex = []byte("0123456789ABCDEF")
+
+func pctEncode(original string) string {
+	src := []byte(original)
+	dst := make([]byte, len(src)*3)
+	for i, b := range src {
+		buf := dst[i*3:i*3+3]
+		buf[0] = 0x25
+		buf[1] = hex[b/16]
+		buf[2] = hex[b%16]
 	}
-	return result
+	return string(dst[:])
 }
 
 func escape(s string, allowReserved bool) string {

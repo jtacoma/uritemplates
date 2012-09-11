@@ -132,3 +132,24 @@ func TestNegative(t *testing.T) {
 func TestSpecExamples(t *testing.T) {
 	runSpec(t, "tests/spec-examples.json")
 }
+
+func BenchmarkParse(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		Parse("http://localhost:6060{/type,path}{.fmt}{?q*}")
+	}
+}
+
+func BenchmarkExpand(b *testing.B) {
+	templ, _ := Parse("http://localhost:6060{/type,path}{.fmt}{?q*}")
+	data := map[string]interface{}{
+		"type": "pkg",
+		"path": [...]string{"github.com", "jtacoma", "uritemplates"},
+		"q": map[string]interface{}{
+			"somequery": "x!@#$",
+			"other":     "y&*()",
+		},
+	}
+	for i := 0; i < b.N; i++ {
+		templ.Expand(data)
+	}
+}
