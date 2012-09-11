@@ -39,32 +39,31 @@ import (
 	"strings"
 )
 
-var unreserved = regexp.MustCompile("[^A-Za-z0-9\\-._~]")
-var reserved = regexp.MustCompile("[^A-Za-z0-9\\-._~:/?#[\\]@!$&'()*+,;=]")
-var validname = regexp.MustCompile("^([A-Za-z0-9_\\.]|%[0-9A-Fa-f][0-9A-Fa-f])+$")
+var (
+	unreserved = regexp.MustCompile("[^A-Za-z0-9\\-._~]")
+	reserved   = regexp.MustCompile("[^A-Za-z0-9\\-._~:/?#[\\]@!$&'()*+,;=]")
+	validname  = regexp.MustCompile("^([A-Za-z0-9_\\.]|%[0-9A-Fa-f][0-9A-Fa-f])+$")
+	hex        = []byte("0123456789ABCDEF")
+)
 
-var hex = []byte("0123456789ABCDEF")
-
-func pctEncode(original string) string {
-	src := []byte(original)
+func pctEncode(src []byte) []byte {
 	dst := make([]byte, len(src)*3)
 	for i, b := range src {
-		buf := dst[i*3:i*3+3]
+		buf := dst[i*3 : i*3+3]
 		buf[0] = 0x25
 		buf[1] = hex[b/16]
 		buf[2] = hex[b%16]
 	}
-	return string(dst[:])
+	return dst
 }
 
-func escape(s string, allowReserved bool) string {
-	var result string
+func escape(s string, allowReserved bool) (escaped string) {
 	if allowReserved {
-		result = reserved.ReplaceAllStringFunc(s, pctEncode)
+		escaped = string(reserved.ReplaceAllFunc([]byte(s), pctEncode))
 	} else {
-		result = unreserved.ReplaceAllStringFunc(s, pctEncode)
+		escaped = string(unreserved.ReplaceAllFunc([]byte(s), pctEncode))
 	}
-	return result
+	return escaped
 }
 
 // A UriTemplate is a parsed representation of a URI template.
@@ -133,37 +132,37 @@ type templateTerm struct {
 }
 
 func parseExpression(expression string) (result templatePart, err error) {
-	switch {
-	case strings.HasPrefix(expression, "+"):
+	switch expression[0] {
+	case '+':
 		result.sep = ","
 		result.allowReserved = true
 		expression = expression[1:]
-	case strings.HasPrefix(expression, "."):
+	case '.':
 		result.first = "."
 		result.sep = "."
 		expression = expression[1:]
-	case strings.HasPrefix(expression, "/"):
+	case '/':
 		result.first = "/"
 		result.sep = "/"
 		expression = expression[1:]
-	case strings.HasPrefix(expression, ";"):
+	case ';':
 		result.first = ";"
 		result.sep = ";"
 		result.named = true
 		expression = expression[1:]
-	case strings.HasPrefix(expression, "?"):
+	case '?':
 		result.first = "?"
 		result.sep = "&"
 		result.named = true
 		result.ifemp = "="
 		expression = expression[1:]
-	case strings.HasPrefix(expression, "&"):
+	case '&':
 		result.first = "&"
 		result.sep = "&"
 		result.named = true
 		result.ifemp = "="
 		expression = expression[1:]
-	case strings.HasPrefix(expression, "#"):
+	case '#':
 		result.first = "#"
 		result.sep = ","
 		result.allowReserved = true
