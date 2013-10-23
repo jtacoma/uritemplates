@@ -216,23 +216,20 @@ func (self *templatePart) expand(values map[string]interface{}) (result string, 
 			continue
 		}
 		var next string
-		switch value.(type) {
+		switch v := value.(type) {
 		case string:
-			v := value.(string)
 			next = self.expandString(term, v)
 		case []interface{}:
-			v := value.([]interface{})
 			next = self.expandArray(term, v)
 		case map[string]interface{}:
 			if term.truncate > 0 {
 				err = errors.New("cannot truncate a map expansion")
 				break
 			}
-			v := value.(map[string]interface{})
 			next = self.expandMap(term, v)
 		default:
-			v := fmt.Sprintf("%v", value)
-			next = self.expandString(term, v)
+			str := fmt.Sprintf("%v", value)
+			next = self.expandString(term, str)
 		}
 		if result != self.first {
 			result += self.sep
@@ -271,16 +268,16 @@ func (self *templatePart) expandArray(t templateTerm, a []interface{}) (result s
 	} else if !t.explode {
 		result = self.expandName(t.name, false)
 	}
-	for i, v := range a {
+	for i, value := range a {
 		if t.explode && i > 0 {
 			result += self.sep
 		} else if i > 0 {
 			result += ","
 		}
 		var s string
-		switch v.(type) {
+		switch v := value.(type) {
 		case string:
-			s = v.(string)
+			s = v
 		default:
 			s = fmt.Sprintf("%v", v)
 		}
@@ -299,16 +296,16 @@ func (self *templatePart) expandMap(t templateTerm, m map[string]interface{}) (r
 	if len(m) == 0 {
 		return
 	}
-	for k, v := range m {
+	for k, value := range m {
 		if t.explode && len(result) > 0 {
 			result += self.sep
 		} else if len(result) > 0 {
 			result += ","
 		}
 		var s string
-		switch v.(type) {
+		switch v := value.(type) {
 		case string:
-			s = v.(string)
+			s = v
 		default:
 			s = fmt.Sprintf("%v", v)
 		}
