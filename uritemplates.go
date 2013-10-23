@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 // Package uritemplates is a level 4 implementation of RFC 6570 (URI
-// Template).
+// Template, http://tools.ietf.org/html/rfc6570).
 //
 // To use uritemplates, parse a template string and expand it with a value
 // map:

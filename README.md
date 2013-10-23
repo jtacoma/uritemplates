@@ -1,30 +1,23 @@
-uritemplates
-============
+# uritemplates
+--
+    import "github.com/jtacoma/uritemplates"
 
-Package **uritemplates** is a level 4 implementation of [RFC 6570 (URI Template)](http://tools.ietf.org/html/rfc6570) in Go.
+[![Build Status](https://travis-ci.org/jtacoma/uritemplates.png)](https://travis-ci.org/jtacoma/uritemplates)
 
-Installation
-------------
+Package uritemplates is a level 4 implementation of RFC 6570 (URI
+Template, http://tools.ietf.org/html/rfc6570).
 
-    go get github.com/jtacoma/uritemplates
+To use uritemplates, parse a template string and expand it with a value
+map:
 
-Usage
------
+	template, _ := uritemplates.Parse("https://api.github.com/repos{/user,repo}")
+	values := make(map[string]interface{})
+	values["user"] = "jtacoma"
+	values["repo"] = "uritemplates"
+	expanded, _ := template.ExpandString(values)
+	fmt.Printf(expanded)
 
-Code:
+## License
 
-    template, _ := uritemplates.Parse("https://api.github.com/repos{/user,repo}")
-    values := make(map[string]interface{})
-    values["user"] = "jtacoma"
-    values["repo"] = "uritemplates"
-    expanded, _ := template.Expand(values)
-    fmt.Printf(expanded)
-
-Output:
-
-    https://api.github.com/repos/jtacoma/uritemplates
-
-License
--------
-
-Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
+Use of this source code is governed by a BSD-style license that can be found in
+the LICENSE file.
