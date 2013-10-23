@@ -266,8 +266,10 @@ func (self *templatePart) expandString(t templateTerm, s string) (result string)
 }
 
 func (self *templatePart) expandArray(t templateTerm, a []interface{}) (result string) {
-	if !t.explode {
-		result = self.expandName(t.name, len(a) == 0)
+	if len(a) == 0 {
+		return
+	} else if !t.explode {
+		result = self.expandName(t.name, false)
 	}
 	for i, v := range a {
 		if t.explode && i > 0 {
@@ -294,6 +296,9 @@ func (self *templatePart) expandArray(t templateTerm, a []interface{}) (result s
 }
 
 func (self *templatePart) expandMap(t templateTerm, m map[string]interface{}) (result string) {
+	if len(m) == 0 {
+		return
+	}
 	for k, v := range m {
 		if t.explode && len(result) > 0 {
 			result += self.sep
