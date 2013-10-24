@@ -119,6 +119,33 @@ func TestSpecExamples(t *testing.T) {
 	runSpec(t, "tests/spec-examples.json")
 }
 
+type Location struct {
+	Path    []interface{} `uri:"path"`
+	Version int           `uri:"version"`
+	Opts    Options       `uri:"opts"`
+}
+
+type Options struct {
+	Format string `uri:"fmt"`
+}
+
+func TestExpandStruct(t *testing.T) {
+	var nav = &Location{
+		Path:    []interface{}{"main", "quux"},
+		Version: 2,
+		Opts: Options{
+			Format: "pdf",
+		},
+	}
+	if template, err := Parse("{/path*,version}{?opts*}"); err != nil {
+		t.Fatalf("%v", err)
+	} else if expanded, err := template.Expand(nav); err != nil {
+		t.Fatalf("%v", err)
+	} else if expanded != "/main/quux/2?fmt=pdf" {
+		t.Fatalf(expanded)
+	}
+}
+
 func BenchmarkParse(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		Parse("http://localhost:6060{/type,path}{.fmt}{?q*}")

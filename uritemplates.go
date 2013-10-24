@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -194,7 +195,15 @@ func parseTerm(term string) (result templateTerm, err error) {
 }
 
 // Expand expands a URI template with a set of values to produce a string.
-func (self *UriTemplate) Expand(values map[string]interface{}) (string, error) {
+func (self *UriTemplate) Expand(value interface{}) (string, error) {
+	values, ismap := value.(map[string]interface{})
+	if !ismap {
+		if m, ismap := struct2map(value); !ismap {
+			return "", errors.New("expected map[string]interface{}, struct, or pointer to struct.")
+		} else {
+			return self.Expand(m)
+		}
+	}
 	var buf bytes.Buffer
 	for _, p := range self.parts {
 		err := p.expand(&buf, values)
@@ -232,8 +241,15 @@ func (self *templatePart) expand(buf *bytes.Buffer, values map[string]interface{
 			}
 			self.expandMap(buf, term, v)
 		default:
-			str := fmt.Sprintf("%v", value)
-			self.expandString(buf, term, str)
+			if m, ismap := struct2map(value); ismap {
+				if term.truncate > 0 {
+					return errors.New("cannot truncate a map expansion")
+				}
+				self.expandMap(buf, term, m)
+			} else {
+				str := fmt.Sprintf("%v", value)
+				self.expandString(buf, term, str)
+			}
 		}
 	}
 	if buf.Len() == firstLen {
@@ -327,5 +343,31 @@ func (self *templatePart) expandMap(buf *bytes.Buffer, t templateTerm, m map[str
 			buf.WriteRune(',')
 			buf.WriteString(escape(s, self.allowReserved))
 		}
+	}
+}
+
+func struct2map(v interface{}) (map[string]interface{}, bool) {
+	value := reflect.ValueOf(v)
+	switch value.Type().Kind() {
+	case reflect.Ptr:
+		return struct2map(value.Elem().Interface())
+	case reflect.Struct:
+		m := make(map[string]interface{})
+		for i := 0; i < value.NumField(); i++ {
+			tag := value.Type().Field(i).Tag
+			var name string
+			if strings.Contains(string(tag), ":") {
+				name = tag.Get("uri")
+			} else {
+				name = strings.TrimSpace(string(tag))
+			}
+			if len(name) == 0 {
+				name = value.Type().Field(i).Name
+			}
+			m[name] = value.Field(i).Interface()
+		}
+		return m, true
+	default:
+		return nil, false
 	}
 }
