@@ -367,7 +367,6 @@ func struct2map(v interface{}) (map[string]interface{}, bool) {
 			m[name] = value.Field(i).Interface()
 		}
 		return m, true
-	default:
-		return nil, false
 	}
+	return nil, false
 }
