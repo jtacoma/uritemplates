@@ -2,7 +2,7 @@
 --
     import "github.com/jtacoma/uritemplates"
 
-[![Build Status](https://travis-ci.org/jtacoma/uritemplates.png)](https://travis-ci.org/jtacoma/uritemplates)
+[![Build Status](https://travis-ci.org/jtacoma/uritemplates.png)](https://travis-ci.org/jtacoma/uritemplates) [![Coverage Status](https://coveralls.io/repos/jtacoma/uritemplates/badge.png)](https://coveralls.io/r/jtacoma/uritemplates)
 
 Package uritemplates is a level 4 implementation of RFC 6570 (URI
 Template, http://tools.ietf.org/html/rfc6570).
