@@ -119,30 +119,107 @@ func TestSpecExamples(t *testing.T) {
 	runSpec(t, "tests/spec-examples.json")
 }
 
+var parse_tests = []struct {
+	Template string
+	ParseOk  bool
+}{
+	{
+		// Syntax error, too many colons:
+		"{opts:1:2}",
+		false,
+	},
+}
+
+func TestParse(t *testing.T) {
+	for itest, test := range parse_tests {
+		if _, err := Parse(test.Template); err != nil {
+			if test.ParseOk {
+				t.Errorf("%v", err)
+			}
+		} else if !test.ParseOk {
+			t.Errorf("%d: expected error, got none.", itest)
+		}
+	}
+}
+
 type Location struct {
 	Path    []interface{} `uri:"path"`
-	Version int           `uri:"version"`
-	Opts    Options       `uri:"opts"`
+	Version int           `json:"version"`
+	Opts    Options       `opts`
 }
 
 type Options struct {
 	Format string `uri:"fmt"`
 }
 
-func TestExpandStruct(t *testing.T) {
-	var nav = &Location{
-		Path:    []interface{}{"main", "quux"},
-		Version: 2,
-		Opts: Options{
-			Format: "pdf",
+var expand_tests = []struct {
+	Source   interface{}
+	Template string
+	Expected string
+	ExpandOk bool
+}{
+	{
+		// General struct expansion:
+		Location{
+			Path:    []interface{}{"main", "quux"},
+			Version: 2,
+			Opts: Options{
+				Format: "pdf",
+			},
 		},
-	}
-	if template, err := Parse("{/path*,version}{?opts*}"); err != nil {
-		t.Fatalf("%v", err)
-	} else if expanded, err := template.Expand(nav); err != nil {
-		t.Fatalf("%v", err)
-	} else if expanded != "/main/quux/2?fmt=pdf" {
-		t.Fatalf(expanded)
+		"{/path*,Version}{?opts*}",
+		"/main/quux/2?fmt=pdf",
+		true,
+	}, {
+		// Pointer to struct:
+		&Location{Opts: Options{Format: "pdf"}},
+		"{?opts*}",
+		"?fmt=pdf",
+		true,
+	}, {
+		// Map expansion cannot be truncated:
+		Location{Opts: Options{Format: "pdf"}},
+		"{?opts:3}",
+		"",
+		false,
+	}, {
+		// Map whose values are not all strings:
+		map[string]interface{}{
+			"one": map[string]interface{}{
+				"two": 42,
+			},
+		},
+		"{?one*}",
+		"?two=42",
+		true,
+	}, {
+		// Value of inappropriate type:
+		42,
+		"{?one*}",
+		"",
+		false,
+	}, {
+		// Truncated array whose values are not all strings:
+		map[string]interface{}{"one": []interface{}{1234}},
+		"{?one:3}",
+		"?one=123",
+		true,
+	},
+}
+
+func TestUriTemplate_Expand(t *testing.T) {
+	for itest, test := range expand_tests {
+		if template, err := Parse(test.Template); err != nil {
+			t.Errorf("%d: %v", itest, err)
+		} else if expanded, err := template.Expand(test.Source); err != nil {
+			if test.ExpandOk {
+				t.Errorf("%d: unexpected error: %v", itest, err)
+			}
+		} else if !test.ExpandOk {
+			t.Errorf("%d: expected error, got none.", itest, err)
+		} else if expanded != test.Expected {
+			t.Errorf("%d: expected %v, got %v", itest, test.Expected, expanded)
+		}
 	}
 }
 

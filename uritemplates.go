@@ -71,12 +71,6 @@ func Parse(rawtemplate string) (template *UriTemplate, err error) {
 			if strings.Contains(s, "}") {
 				err = errors.New("unexpected }")
 				break
-			} else {
-				subsplit := strings.Split(s, ":")
-				if len(subsplit) > 1 && strings.Contains(subsplit[0], "/") {
-					err = errors.New("unexpected :")
-					break
-				}
 			}
 			template.parts[i].raw = s
 		} else {
@@ -88,10 +82,6 @@ func Parse(rawtemplate string) (template *UriTemplate, err error) {
 			expression := subsplit[0]
 			template.parts[i*2-1], err = parseExpression(expression)
 			if err != nil {
-				break
-			}
-			if strings.Contains(subsplit[1], "}") {
-				err = errors.New("unexpected }")
 				break
 			}
 			template.parts[i*2].raw = subsplit[1]
@@ -330,9 +320,6 @@ func (self *templatePart) expandMap(buf *bytes.Buffer, t templateTerm, m map[str
 			s = v
 		default:
 			s = fmt.Sprintf("%v", v)
-		}
-		if len(s) > t.truncate && t.truncate > 0 {
-			s = s[:t.truncate]
 		}
 		if t.explode {
 			buf.WriteString(escape(k, self.allowReserved))
