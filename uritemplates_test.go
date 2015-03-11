@@ -7,6 +7,7 @@ package uritemplates
 import (
 	"encoding/json"
 	"os"
+	"reflect"
 	"testing"
 )
 
@@ -157,6 +158,7 @@ var expand_tests = []struct {
 	Template string
 	Expected string
 	ExpandOk bool
+	Names    []string
 }{
 	{
 		// General struct expansion:
@@ -170,18 +172,21 @@ var expand_tests = []struct {
 		"{/path*,Version}{?opts*}",
 		"/main/quux/2?fmt=pdf",
 		true,
+		[]string{"path", "Version", "opts"},
 	}, {
 		// Pointer to struct:
 		&Location{Opts: Options{Format: "pdf"}},
 		"{?opts*}",
 		"?fmt=pdf",
 		true,
+		[]string{"opts"},
 	}, {
 		// Map expansion cannot be truncated:
 		Location{Opts: Options{Format: "pdf"}},
 		"{?opts:3}",
 		"",
 		false,
+		[]string{"opts"},
 	}, {
 		// Map whose values are not all strings:
 		map[string]interface{}{
@@ -192,18 +197,21 @@ var expand_tests = []struct {
 		"{?one*}",
 		"?two=42",
 		true,
+		[]string{"one"},
 	}, {
 		// Value of inappropriate type:
 		42,
 		"{?one*}",
 		"",
 		false,
+		[]string{"one"},
 	}, {
 		// Truncated array whose values are not all strings:
 		map[string]interface{}{"one": []interface{}{1234}},
 		"{?one:3}",
 		"?one=123",
 		true,
+		[]string{"one"},
 	},
 }
 
@@ -211,6 +219,8 @@ func TestUriTemplate_Expand(t *testing.T) {
 	for itest, test := range expand_tests {
 		if template, err := Parse(test.Template); err != nil {
 			t.Errorf("%d: %v", itest, err)
+		} else if names := template.Names(); !reflect.DeepEqual(names, test.Names) {
+			t.Errorf("%d: expected names %v, got %v", itest, test.Names, names)
 		} else if expanded, err := template.Expand(test.Source); err != nil {
 			if test.ExpandOk {
 				t.Errorf("%d: unexpected error: %v", itest, err)
