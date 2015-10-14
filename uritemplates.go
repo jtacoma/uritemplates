@@ -184,6 +184,23 @@ func parseTerm(term string) (result templateTerm, err error) {
 	return result, err
 }
 
+// Names returns the names of all variables within the template.
+func (self *UriTemplate) Names() []string {
+	names := make([]string, 0, len(self.parts))
+
+	for _, p := range self.parts {
+		if len(p.raw) > 0 || len(p.terms) == 0 {
+			continue
+		}
+
+		for _, term := range p.terms {
+			names = append(names, term.name)
+		}
+	}
+
+	return names
+}
+
 // Expand expands a URI template with a set of values to produce a string.
 func (self *UriTemplate) Expand(value interface{}) (string, error) {
 	values, ismap := value.(map[string]interface{})
