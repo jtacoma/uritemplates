@@ -14,7 +14,7 @@ map:
 	values := make(map[string]interface{})
 	values["user"] = "jtacoma"
 	values["repo"] = "uritemplates"
-	expanded, _ := template.ExpandString(values)
+	expanded, _ := template.Expand(values)
 	fmt.Printf(expanded)
 
 ## License
