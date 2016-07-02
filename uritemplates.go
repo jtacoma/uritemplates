@@ -93,6 +93,10 @@ func Parse(rawtemplate string) (template *UriTemplate, err error) {
 	return template, err
 }
 
+func (t UriTemplate) String() string {
+	return t.raw
+}
+
 type templatePart struct {
 	raw           string
 	terms         []templateTerm
