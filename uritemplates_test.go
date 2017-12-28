@@ -213,6 +213,13 @@ var expand_tests = []struct {
 		true,
 		[]string{"one"},
 	},
+	{
+		map[string]interface{}{"foo": "bar", "baz": nil},
+		"{foo}/{baz}",
+		"bar/",
+		true,
+		[]string{"foo", "baz"},
+	},
 }
 
 func TestUriTemplate_Expand(t *testing.T) {

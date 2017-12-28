@@ -235,7 +235,7 @@ func (self *templatePart) expand(buf *bytes.Buffer, values map[string]interface{
 	var firstLen = buf.Len()
 	for _, term := range self.terms {
 		value, exists := values[term.name]
-		if !exists {
+		if !exists || value == nil {
 			continue
 		}
 		if buf.Len() != firstLen {
